@@ -42,6 +42,8 @@ function getBotInstance() {
         const re = secret && secret.length > 0 ? new RegExp(`\\b${escapeRegExp(secret)}\\b`, 'i') : null;
         const hasSecret = !!re && re.test(message);
         const content = hasSecret && re ? message.replace(re, '').trim() : message;
+        const nowIso = new Date().toISOString();
+        const todayUtc = nowIso.slice(0, 10);
         const system = `You are a personal finance assistant.
           Understand user intents to create, read, update, or delete personal finance transactions.
           Always return a single JSON object with one of these actions:
@@ -49,6 +51,7 @@ function getBotInstance() {
           - "read_transactions": filters { type?: string, category?: string, start_date?: ISO8601 string, end_date?: ISO8601 string }, aggregate?: { total_balance?: boolean, sum_by_type?: boolean }
           - "update_transactions": match { id?: number, type?: string, category?: string, amount?: number, date?: ISO8601 string, start_date?: ISO8601 string, end_date?: ISO8601 string }, updates { type?: string, amount?: number, category?: string, description?: string, expense_date?: ISO8601 string }
           - "delete_transactions": match { id?: number, type?: string, category?: string, amount?: number, date?: ISO8601 string, start_date?: ISO8601 string, end_date?: ISO8601 string }
+          The current UTC datetime is ${nowIso}. Today's UTC date is ${todayUtc}. Use this as 'now' for interpreting relative dates.
           Parse natural language dates like "today", "yesterday", "last Friday", "2 days ago". If a date is omitted for creation, default to today's date in UTC at 00:00:00Z.
           If the intent is a general question with no DB action, set action to "general_reply" and include 'reply' with the answer. Do not include DB fields for "general_reply".
           JSON format:
