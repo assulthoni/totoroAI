@@ -1,15 +1,15 @@
 import { getSupabase } from '@/lib/supabase';
+export const dynamic = 'force-dynamic';
 
 export default async function AdminHome() {
-  const supabase = getSupabase();
-  const { data: users } = await supabase
+  const supabase = getSupabase({ serviceRole: true });
+  const { data: users, error: usersError } = await supabase
     .from('users')
     .select('telegram_user_id, phone_number, consented, allowed, created_at')
     .order('created_at', { ascending: false });
   const { data: tx } = await supabase
     .from('transactions')
     .select('user_id, type, amount')
-    .limit(2000);
 
   type Totals = { income: number; expense: number; savings: number };
   const aggregated: Record<string, Totals> = {};
@@ -27,8 +27,30 @@ export default async function AdminHome() {
     'use server';
     const telegram_user_id = formData.get('telegram_user_id') as string;
     const allowed = formData.get('allowed') === 'true';
-    const supabase = getSupabase();
+    const supabase = getSupabase({ serviceRole: true });
     await supabase.from('users').update({ allowed }).eq('telegram_user_id', telegram_user_id);
+  }
+
+  async function addUser(formData: FormData) {
+    'use server';
+    const telegram_user_id = String(formData.get('telegram_user_id') || '').trim();
+    const phone_number = String(formData.get('phone_number') || '').trim() || null;
+    const consented = formData.get('consented') === 'on';
+    const allowed = formData.get('allowed') === 'on';
+    if (!telegram_user_id) return;
+    const supabase = getSupabase({ serviceRole: true });
+    await supabase.from('users').upsert(
+      { telegram_user_id, phone_number, consented, allowed },
+      { onConflict: 'telegram_user_id' }
+    );
+  }
+
+  async function deleteUser(formData: FormData) {
+    'use server';
+    const telegram_user_id = String(formData.get('telegram_user_id') || '').trim();
+    if (!telegram_user_id) return;
+    const supabase = getSupabase({ serviceRole: true });
+    await supabase.from('users').delete().eq('telegram_user_id', telegram_user_id);
   }
 
   return (
@@ -44,6 +66,37 @@ export default async function AdminHome() {
         <section className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-neutral-800">
             <h2 className="text-lg font-medium">Users</h2>
+          </div>
+          <div className="px-4 py-4 border-b border-gray-200 dark:border-neutral-800">
+            <form action={addUser} className="grid grid-cols-1 gap-3 sm:grid-cols-5">
+              <input
+                name="telegram_user_id"
+                placeholder="Telegram ID"
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
+              />
+              <input
+                name="phone_number"
+                placeholder="Phone (optional)"
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
+              />
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="consented" className="accent-blue-600" /> Consented
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="allowed" className="accent-blue-600" /> Allowed
+              </label>
+              <button
+                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                type="submit"
+              >
+                Add / Upsert
+              </button>
+            </form>
+            {usersError && (
+              <p className="mt-2 text-sm text-rose-600 dark:text-rose-400">
+                Failed to load users: {usersError.message}
+              </p>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -98,6 +151,15 @@ export default async function AdminHome() {
                           }
                         >
                           {u.allowed ? 'Revoke' : 'Allow'}
+                        </button>
+                      </form>
+                      <form action={deleteUser} className="mt-1">
+                        <input type="hidden" name="telegram_user_id" value={u.telegram_user_id} />
+                        <button
+                          className="rounded-md px-3 py-1 text-sm font-medium text-rose-700 ring-1 ring-inset ring-rose-200 hover:bg-rose-50 dark:text-rose-300 dark:ring-rose-800/50 dark:hover:bg-neutral-800"
+                          type="submit"
+                        >
+                          Delete
                         </button>
                       </form>
                     </td>
