@@ -32,73 +32,122 @@ export default async function AdminHome() {
   }
 
   return (
-    <div className="p-6 space-y-8">
-      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-      <section>
-        <h2 className="text-xl font-semibold mb-2">Users</h2>
-        <div className="overflow-auto">
-          <table className="min-w-full border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 border">Telegram ID</th>
-                <th className="p-2 border">Phone</th>
-                <th className="p-2 border">Consented</th>
-                <th className="p-2 border">Allowed</th>
-                <th className="p-2 border">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users?.map((u) => (
-                <tr key={u.telegram_user_id}>
-                  <td className="p-2 border">{u.telegram_user_id}</td>
-                  <td className="p-2 border">{u.phone_number || '-'}</td>
-                  <td className="p-2 border">{u.consented ? 'Yes' : 'No'}</td>
-                  <td className="p-2 border">{u.allowed ? 'Yes' : 'No'}</td>
-                  <td className="p-2 border">
-                    <form action={toggleUser}>
-                      <input type="hidden" name="telegram_user_id" value={u.telegram_user_id} />
-                      <input type="hidden" name="allowed" value={(!u.allowed).toString()} />
-                      <button className="px-2 py-1 bg-blue-600 text-white rounded">
-                        {u.allowed ? 'Revoke' : 'Allow'}
-                      </button>
-                    </form>
-                  </td>
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <div className="mx-auto max-w-7xl p-6 space-y-8">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Admin Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
+            Manage users, approvals, and view aggregated transaction metrics.
+          </p>
+        </div>
+
+        <section className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-neutral-800">
+            <h2 className="text-lg font-medium">Users</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-100 text-gray-700 dark:bg-neutral-800 dark:text-neutral-300">
+                <tr>
+                  <th className="px-4 py-2 text-left">Telegram ID</th>
+                  <th className="px-4 py-2 text-left">Phone</th>
+                  <th className="px-4 py-2 text-left">Consented</th>
+                  <th className="px-4 py-2 text-left">Allowed</th>
+                  <th className="px-4 py-2 text-left">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      <section>
-        <h2 className="text-xl font-semibold mb-2">Per-User Totals</h2>
-        <div className="overflow-auto">
-          <table className="min-w-full border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 border">Telegram ID</th>
-                <th className="p-2 border">Income</th>
-                <th className="p-2 border">Expense</th>
-                <th className="p-2 border">Savings</th>
-                <th className="p-2 border">Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(aggregated).map(([id, sums]) => {
-                const balance = sums.income - sums.expense - sums.savings;
-                return (
-                  <tr key={id}>
-                    <td className="p-2 border">{id}</td>
-                    <td className="p-2 border">{sums.income.toFixed(2)}</td>
-                    <td className="p-2 border">{sums.expense.toFixed(2)}</td>
-                    <td className="p-2 border">{sums.savings.toFixed(2)}</td>
-                    <td className="p-2 border">{balance.toFixed(2)}</td>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-neutral-800">
+                {users?.map((u) => (
+                  <tr key={u.telegram_user_id} className="hover:bg-gray-50 dark:hover:bg-neutral-800/60">
+                    <td className="px-4 py-2 font-mono text-xs">{u.telegram_user_id}</td>
+                    <td className="px-4 py-2">{u.phone_number || <span className="text-gray-400">—</span>}</td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={
+                          'inline-flex items-center rounded-full px-2 py-0.5 text-xs ' +
+                          (u.consented
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300')
+                        }
+                      >
+                        {u.consented ? 'Yes' : 'No'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={
+                          'inline-flex items-center rounded-full px-2 py-0.5 text-xs ' +
+                          (u.allowed
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                            : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300')
+                        }
+                      >
+                        {u.allowed ? 'Allowed' : 'Blocked'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <form action={toggleUser}>
+                        <input type="hidden" name="telegram_user_id" value={u.telegram_user_id} />
+                        <input type="hidden" name="allowed" value={(!u.allowed).toString()} />
+                        <button
+                          className={
+                            'rounded-md px-3 py-1 text-sm font-medium ring-1 ring-inset transition-colors ' +
+                            (u.allowed
+                              ? 'bg-white text-rose-700 ring-rose-200 hover:bg-rose-50 dark:bg-neutral-900 dark:text-rose-300 dark:ring-rose-800/50 dark:hover:bg-neutral-800'
+                              : 'bg-white text-emerald-700 ring-emerald-200 hover:bg-emerald-50 dark:bg-neutral-900 dark:text-emerald-300 dark:ring-emerald-800/50 dark:hover:bg-neutral-800')
+                          }
+                        >
+                          {u.allowed ? 'Revoke' : 'Allow'}
+                        </button>
+                      </form>
+                    </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-neutral-800">
+            <h2 className="text-lg font-medium">Per-User Totals</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-100 text-gray-700 dark:bg-neutral-800 dark:text-neutral-300">
+                <tr>
+                  <th className="px-4 py-2 text-left">Telegram ID</th>
+                  <th className="px-4 py-2 text-left">Income</th>
+                  <th className="px-4 py-2 text-left">Expense</th>
+                  <th className="px-4 py-2 text-left">Savings</th>
+                  <th className="px-4 py-2 text-left">Balance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-neutral-800">
+                {Object.entries(aggregated).map(([id, sums]) => {
+                  const balance = sums.income - sums.expense - sums.savings;
+                  return (
+                    <tr key={id} className="hover:bg-gray-50 dark:hover:bg-neutral-800/60">
+                      <td className="px-4 py-2 font-mono text-xs">{id}</td>
+                      <td className="px-4 py-2 text-emerald-600 dark:text-emerald-400">{sums.income.toFixed(2)}</td>
+                      <td className="px-4 py-2 text-rose-600 dark:text-rose-400">{sums.expense.toFixed(2)}</td>
+                      <td className="px-4 py-2 text-indigo-600 dark:text-indigo-400">{sums.savings.toFixed(2)}</td>
+                      <td
+                        className={
+                          'px-4 py-2 ' +
+                          (balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')
+                        }
+                      >
+                        {balance.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
