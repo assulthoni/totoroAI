@@ -1,92 +1,79 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getSupabase } from '@/lib/supabase';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
-  const [stats, setStats] = useState({
-    income: 0,
-    expense: 0,
-    savings: 0,
-    balance: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchStats() {
-      const supabase = getSupabase();
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('type, amount');
-
-      if (error) {
-        console.error('Error fetching stats:', error);
-        setLoading(false);
-        return;
-      }
-
-      const totals = data.reduce(
-        (acc, transaction) => {
-          if (transaction.type === 'income') acc.income += Number(transaction.amount);
-          if (transaction.type === 'expense') acc.expense += Number(transaction.amount);
-          if (transaction.type === 'savings') acc.savings += Number(transaction.amount);
-          return acc;
-        },
-        { income: 0, expense: 0, savings: 0 }
-      );
-
-      setStats({
-        ...totals,
-        balance: totals.income - totals.expense - totals.savings,
-      });
-      setLoading(false);
-    }
-
-    fetchStats();
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-10">
-          Personal Finance Tracker Dashboard
-        </h1>
-
-        {loading ? (
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+    <main className="min-h-screen bg-gradient-to-b from-white to-gray-50 text-gray-900 dark:from-neutral-950 dark:to-neutral-900 dark:text-neutral-100">
+      <div className="mx-auto max-w-6xl px-6 py-20">
+        <section className="text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Totoro AI — Personal Finance via Telegram
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-base text-gray-600 dark:text-neutral-400">
+            Record expenses, income, and savings directly from Telegram. Admins manage access and view insights
+            in a secure dashboard.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              Admin Login
+            </Link>
+            <a
+              href="https://t.me/TotoroooooBot"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition hover:bg-gray-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+            >
+              Open Telegram
+            </a>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <dt className="text-sm font-medium text-gray-500 truncate">Total Balance</dt>
-              <dd className="mt-1 text-3xl font-semibold text-blue-600">${stats.balance.toFixed(2)}</dd>
-            </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <dt className="text-sm font-medium text-gray-500 truncate">Income</dt>
-              <dd className="mt-1 text-3xl font-semibold text-green-600">${stats.income.toFixed(2)}</dd>
-            </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <dt className="text-sm font-medium text-gray-500 truncate">Expenses</dt>
-              <dd className="mt-1 text-3xl font-semibold text-red-600">${stats.expense.toFixed(2)}</dd>
-            </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <dt className="text-sm font-medium text-gray-500 truncate">Savings</dt>
-              <dd className="mt-1 text-3xl font-semibold text-indigo-600">${stats.savings.toFixed(2)}</dd>
-            </div>
-          </div>
-        )}
+        </section>
 
-        <div className="mt-12 bg-white shadow overflow-hidden sm:rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">How to use your Telegram Bot:</h2>
-          <ul className="list-disc list-inside space-y-2 text-gray-600">
-            <li>Type: "Received $500 for freelance work" to record income.</li>
-            <li>Type: "Spent $20 on coffee" to record an expense.</li>
-            <li>Type: "Saved $100 today" to record savings.</li>
-            <li>Ask questions: "What is my total balance?" or "How much did I spend on food this month?"</li>
-          </ul>
-        </div>
+        <section className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <h3 className="text-base font-semibold">Send From Telegram</h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-neutral-400">
+              Tell the bot what you spent or earned. It parses the details and date automatically.
+            </p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <h3 className="text-base font-semibold">Consent & Whitelist</h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-neutral-400">
+              Share your phone in Telegram and get approved by an admin to unlock full features.
+            </p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <h3 className="text-base font-semibold">Secure Admin</h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-neutral-400">
+              Admins review users and manage data in a secure, access-controlled dashboard.
+            </p>
+          </div>
+        </section>
+
+        <section className="mx-auto mt-16 flex max-w-5xl flex-col items-center gap-4 rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <h3 className="text-base font-semibold">Scan To Chat</h3>
+          <p className="text-sm text-gray-600 dark:text-neutral-400">
+            Scan this QR code to open the bot on Telegram and start tracking your finances.
+          </p>
+          <div className="mt-2 rounded-lg border border-gray-200 bg-white p-2 dark:border-neutral-700 dark:bg-neutral-950">
+            <Image
+              src="/qrcode.jpeg"
+              width={280}
+              height={280}
+              alt="QR code to open the Totoro AI Telegram bot"
+              className="h-auto w-[280px] rounded-md"
+              priority
+            />
+          </div>
+          <p className="text-xs text-gray-500 dark:text-neutral-500">
+            Or tap here: <a className="underline hover:no-underline" href="https://t.me/TotoroooooBot" target="_blank" rel="noreferrer">t.me/TotoroooooBot</a>
+          </p>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
