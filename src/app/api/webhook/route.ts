@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Telegraf } from 'telegraf';
+import { Telegraf, Markup } from 'telegraf';
 import { getGeminiModel } from '@/lib/gemini';
 import { getSupabase } from '@/lib/supabase';
 
@@ -34,6 +34,43 @@ function getBotInstance() {
         'Welcome! I am your personal finance tracker. Send me your income, expenses, or savings, and I will track them for you. You can also ask me general questions!'
       )
     );
+    bot.command('link', async (ctx) => {
+      await ctx.reply(
+        'Please share your phone number to enable full features.',
+        Markup.keyboard([[Markup.button.contactRequest('Share phone number')]])
+          .oneTime()
+          .resize()
+      );
+    });
+    bot.on('contact', async (ctx) => {
+      try {
+        const supabase = getSupabase();
+        const contact = (ctx.message as any).contact;
+        const userId = ctx.from.id.toString();
+        if (!contact || !contact.phone_number) {
+          await ctx.reply('No phone number received.');
+          return;
+        }
+        const phone = contact.phone_number;
+        const { error } = await supabase
+          .from('users')
+          .upsert(
+            {
+              telegram_user_id: userId,
+              phone_number: phone,
+              consented: true,
+            },
+            { onConflict: 'telegram_user_id' }
+          );
+        if (error) throw error;
+        await ctx.reply(
+          'Thank you! Your phone number was received. An admin will review and enable full features if approved.'
+        );
+      } catch (e) {
+        logError('contact', e);
+        await ctx.reply('Failed to record your phone number. Please try again later.');
+      }
+    });
     bot.on('text', async (ctx) => {
       const message = ctx.message.text;
       const userId = ctx.from.id.toString();
@@ -79,9 +116,33 @@ function getBotInstance() {
           action === 'read_transactions' ||
           action === 'update_transactions' ||
           action === 'delete_transactions';
-        if (isDbAction && secret && secret.length > 0 && !hasSecret) {
-          await ctx.reply('Unauthorized');
-          return;
+        if (isDbAction) {
+          const { data: users, error: usersErr } = await supabase
+            .from('users')
+            .select('consented, allowed, phone_number')
+            .eq('telegram_user_id', userId)
+            .limit(1);
+          if (usersErr) throw usersErr;
+          const u = users?.[0];
+          const consented = !!u?.consented;
+          const allowed = !!u?.allowed;
+          if (!consented) {
+            await ctx.reply(
+              'To use full features, share your phone number.',
+              Markup.keyboard([[Markup.button.contactRequest('Share phone number')]])
+                .oneTime()
+                .resize()
+            );
+            return;
+          }
+          if (!allowed) {
+            await ctx.reply('Your access is pending admin approval.');
+            return;
+          }
+          if (secret && secret.length > 0 && !hasSecret) {
+            await ctx.reply('Unauthorized');
+            return;
+          }
         }
         if (action === 'general_reply') {
           await ctx.reply(result.reply || 'Okay.');
