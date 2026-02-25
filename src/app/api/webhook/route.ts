@@ -3,8 +3,18 @@ import { Telegraf } from 'telegraf';
 import { getGeminiModel } from '@/lib/gemini';
 import { getSupabase } from '@/lib/supabase';
 
+export const runtime = 'nodejs';
+
 let bot: Telegraf | null = null;
 let handlersSet = false;
+
+function logError(source: string, error: unknown) {
+  const payload =
+    error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : { value: String(error) };
+  console.log(JSON.stringify({ level: 'error', route: '/api/webhook', source, error: payload }));
+}
 
 function getBotInstance() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -69,7 +79,7 @@ function getBotInstance() {
           );
         }
       } catch (error) {
-        console.error('AI or DB error:', error);
+        logError('bot.on', error);
         await ctx.reply('Sorry, I had trouble processing that message. Please try again later.');
       }
     });
@@ -86,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    logError('POST', error);
     return NextResponse.json({ error: 'Failed to process update' }, { status: 500 });
   }
 }
