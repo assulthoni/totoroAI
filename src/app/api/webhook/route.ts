@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Telegraf } from 'telegraf';
 import openai from '@/lib/openai';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '');
 
@@ -61,7 +61,7 @@ bot.on('text', async (ctx) => {
       const { type, amount, category, description } = result.data;
       
       // 2. Store in Supabase
-      const { error } = await supabase.from('transactions').insert([
+      const { error } = await getSupabase().from('transactions').insert([
         {
           user_id: userId,
           type,
