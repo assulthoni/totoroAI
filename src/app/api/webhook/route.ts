@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Telegraf, Markup } from "telegraf";
-import { getGeminiModel } from "@/lib/gemini";
+import { generateJson } from '@/lib/gemini';
 import { getSupabase } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -102,13 +102,7 @@ function getBotInstance() {
             "reply"?: string
           }`;
         const prompt = `${system}\n\nUser: ${content}`;
-        const model = getGeminiModel();
-        const resultResponse = await model.generateContent({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" },
-        });
-        const resultText = resultResponse.response.text() || "{}";
-        const result = JSON.parse(resultText);
+        const result = await generateJson(prompt);
         const supabase = getSupabase();
         const action: string | undefined = result.action;
         const isDbAction =
