@@ -34,20 +34,29 @@ function getBotInstance() {
       const message = ctx.message.text;
       const userId = ctx.from.id.toString();
       try {
-        const system = `You are a personal finance assistant. 
-          Extract financial transactions from the user message. 
+        const system = `You are a personal finance assistant.
+          Extract financial transactions from the user message.
           If the message is about a financial transaction (income, expense, savings), return a JSON object with:
           - type: "income", "expense", or "savings"
           - amount: number
           - category: string
           - description: string
+          - expense_date: ISO 8601 string in UTC (e.g., "2026-02-25T00:00:00Z").
+            - Parse natural language like "today", "yesterday", "last Friday", "2 days ago".
+            - If not provided, default to today's date in UTC (set time to 00:00:00Z).
           
           If the message is NOT a transaction, but a general query, provide a helpful response as 'reply'.
           
           Return JSON in this format:
           {
             "isTransaction": boolean,
-            "data": { ... transaction details ... } | null,
+            "data": {
+              "type": string,
+              "amount": number,
+              "category": string,
+              "description": string | null,
+              "expense_date": string
+            } | null,
             "reply": string | null
           }`;
         const prompt = `${system}\n\nUser: ${message}`;
@@ -58,7 +67,11 @@ function getBotInstance() {
         });
         const result = JSON.parse(resultResponse.response.text() || '{}');
         if (result.isTransaction) {
-          const { type, amount, category, description } = result.data;
+          const { type, amount, category, description, expense_date } = result.data;
+          const expenseDate =
+            typeof expense_date === 'string' && expense_date.length > 0
+              ? expense_date
+              : new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z').toISOString();
           const { error } = await getSupabase().from('transactions').insert([
             {
               user_id: userId,
@@ -66,6 +79,7 @@ function getBotInstance() {
               amount,
               category,
               description,
+              expense_date: expenseDate,
               created_at: new Date().toISOString(),
             },
           ]);

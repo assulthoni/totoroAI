@@ -6,8 +6,13 @@ CREATE TABLE IF NOT EXISTS transactions (
   amount NUMERIC NOT NULL,
   category TEXT NOT NULL,
   description TEXT,
+  expense_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Index for user_id to speed up queries
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+
+-- Apply to existing databases
+ALTER TABLE IF NOT EXISTS transactions
+ADD COLUMN IF NOT EXISTS expense_date TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL;
