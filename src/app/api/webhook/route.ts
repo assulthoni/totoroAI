@@ -16,10 +16,6 @@ function logError(source: string, error: unknown) {
   console.log(JSON.stringify({ level: 'error', route: '/api/webhook', source, error: payload }));
 }
 
-function escapeRegExp(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function getBotInstance() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
@@ -75,10 +71,7 @@ function getBotInstance() {
       const message = ctx.message.text;
       const userId = ctx.from.id.toString();
       try {
-        const secret = process.env.TELEGRAM_SECRET_WORD || process.env.BOT_SECRET_WORD || process.env.SECRET_WORD;
-        const re = secret && secret.length > 0 ? new RegExp(`\\b${escapeRegExp(secret)}\\b`, 'i') : null;
-        const hasSecret = !!re && re.test(message);
-        const content = hasSecret && re ? message.replace(re, '').trim() : message;
+        const content = message;
         const nowIso = new Date().toISOString();
         const todayUtc = nowIso.slice(0, 10);
         const system = `You are a personal finance assistant.
@@ -137,10 +130,6 @@ function getBotInstance() {
           }
           if (!allowed) {
             await ctx.reply('Your access is pending admin approval.');
-            return;
-          }
-          if (secret && secret.length > 0 && !hasSecret) {
-            await ctx.reply('Unauthorized');
             return;
           }
         }
